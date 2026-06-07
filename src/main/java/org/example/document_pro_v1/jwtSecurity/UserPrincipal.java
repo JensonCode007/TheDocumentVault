@@ -21,7 +21,7 @@ public class UserPrincipal implements UserDetails {
     private Long id;
     private String email;
     private String password;
-
+    private Long tenantId;
     private Collection<? extends GrantedAuthority> authorities;
 
 
@@ -32,6 +32,7 @@ public class UserPrincipal implements UserDetails {
                 user.getId(),
                 user.getEmail(),
                 user.getPassword(),
+                user.getTenant().getId(),
                 Collections.singletonList(grantedAuthority)
         );
     }

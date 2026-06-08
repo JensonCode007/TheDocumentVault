@@ -22,6 +22,7 @@ public class UserPrincipal implements UserDetails {
     private String email;
     private String password;
     private Long tenantId;
+    private String tenantSlug;
     private Collection<? extends GrantedAuthority> authorities;
 
 
@@ -33,6 +34,7 @@ public class UserPrincipal implements UserDetails {
                 user.getEmail(),
                 user.getPassword(),
                 user.getTenant().getId(),
+                user.getTenant().getSlug(),
                 Collections.singletonList(grantedAuthority)
         );
     }
@@ -41,16 +43,16 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return authorities;
     }
 
     @Override
     public String getPassword() {
-        return "";
+        return password;
     }
 
     @Override
     public String getUsername() {
-        return "";
+        return email;
     }
 }

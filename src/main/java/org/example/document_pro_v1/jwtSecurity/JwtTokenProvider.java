@@ -23,7 +23,7 @@ public class JwtTokenProvider {
     @Value("${jwt.expiration}")
     private Long expiration;
 
-    public String generateToken(Authentication authentication, String tenantId) {
+    public String generateToken(Authentication authentication, Long tenantId, String tenantSlug) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         Date expirationDate = new Date(System.currentTimeMillis() + expiration * 1000);
         SecretKey secretKey = Keys.hmacShaKeyFor(password.getBytes());
@@ -40,6 +40,7 @@ public class JwtTokenProvider {
                 .issuedAt(new Date())
                 .claim("role", Role)
                 .claim("tenantId", tenantId)
+                .claim("tenantSlug",tenantSlug)
                 .expiration(expirationDate)
                 .signWith(secretKey)
                 .compact();

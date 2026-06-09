@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface DocumentRepository extends JpaRepository<Document,Long> {
     List<Document> findAllByTenantId(Long tenantId);
+
+    Document findByFileName(String fileName);
 }

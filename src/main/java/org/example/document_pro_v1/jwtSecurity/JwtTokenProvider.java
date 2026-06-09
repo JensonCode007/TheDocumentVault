@@ -41,6 +41,7 @@ public class JwtTokenProvider {
                 .claim("role", Role)
                 .claim("tenantId", tenantId)
                 .claim("tenantSlug",tenantSlug)
+                .claim("userEmail", userDetails.getUsername())
                 .expiration(expirationDate)
                 .signWith(secretKey)
                 .compact();
@@ -90,11 +91,22 @@ public class JwtTokenProvider {
 
     }
 
-    public String getTenantIdFromToken(String token) {
+    public Long getTenantIdFromToken(String token) {
         SecretKey key = Keys.hmacShaKeyFor(password.getBytes());
         Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
-        return claims.get("tenantId", String.class);
+        return claims.get("tenantId", Long.class);
 
+    }
+    public String getTenantSlugFromToken(String token) {
+        SecretKey key = Keys.hmacShaKeyFor(password.getBytes());
+        Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+        return claims.get("tenantSlug", String.class);
+
+    }
+    public String getUserEmailFromToken(String token) {
+        SecretKey key = Keys.hmacShaKeyFor(password.getBytes());
+        Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+        return claims.get("userEmail", String.class);
     }
 }
 

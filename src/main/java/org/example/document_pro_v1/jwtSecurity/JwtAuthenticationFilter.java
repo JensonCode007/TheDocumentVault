@@ -32,10 +32,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NotNull HttpServletResponse response,
                                     @NotNull FilterChain chain)throws ServletException, IOException
     {
+        log.info("🎯 TRACER: Filter Hit! Endpoint: {}, Auth Header: {}",
+                request.getRequestURI(),
+                request.getHeader("Authorization"));
         try{
             String token = getTokenFromRequest(request);
             if(StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
-                String tenantId = jwtTokenProvider.getTenantIdFromToken(token);
+                Long tenantId = jwtTokenProvider.getTenantIdFromToken(token);
                 String email = jwtTokenProvider.getUserDetailsFromToken(token);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
                 String role = jwtTokenProvider.getRoleFromToken(token);
@@ -52,6 +55,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 authenticationToken.setDetails(Map.of("tenantId", tenantId));
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                log.info("Filter complete! Security Context holds authorities: {}",
+                        SecurityContextHolder.getContext().getAuthentication().getAuthorities());
             }
 
         }

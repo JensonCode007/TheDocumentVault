@@ -16,6 +16,7 @@ public class QueryLog {
 
     private String queryText;
     private String responseTimeMS;
+    @Column(columnDefinition = "TEXT")
     private String responseResults;
 
     @ManyToOne

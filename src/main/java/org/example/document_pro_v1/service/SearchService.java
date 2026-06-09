@@ -28,7 +28,7 @@ public class SearchService {
     private final ObjectMapper objectMapper;
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
-    private final QueryLogRepository queryLogRepository;
+    private final AuditLogService auditLogService;
 
     public SearchResponse querySearch(String query, String authHeader) {
         String jwtToken = authHeader;
@@ -74,7 +74,7 @@ public class SearchService {
                 queryLog.setUser(user);
                 queryLog.setTenant(tenant);
                 queryLog.setResponseTimeMS(String.valueOf(latencyMS));
-                queryLogRepository.save(queryLog);
+                auditLogService.logService(queryLog);
 
 
                 log.info("Successfully Returned the text✅");

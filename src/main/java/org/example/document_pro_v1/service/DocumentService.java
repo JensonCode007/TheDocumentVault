@@ -8,10 +8,12 @@ import okhttp3.*;
 
 import org.example.document_pro_v1.Enums.DocumentStatus;
 import org.example.document_pro_v1.entity.Document;
+import org.example.document_pro_v1.entity.Tenant;
 import org.example.document_pro_v1.entity.User;
 import org.example.document_pro_v1.jwtSecurity.UserPrincipal;
 
 import org.example.document_pro_v1.repository.DocumentRepository;
+import org.example.document_pro_v1.repository.TenantRepository;
 import org.example.document_pro_v1.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,12 +32,22 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
+    private final TenantRepository tenantRepository;
 
-    public String documentIngestion(UserPrincipal userPrincipal, @RequestParam(name = "file") MultipartFile file) {
+    public String documentIngestion(UserPrincipal userPrincipal, MultipartFile file) {
 
         String tenantSlug = userPrincipal.getTenantSlug();
         User user = userRepository.findByEmail(userPrincipal.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        Tenant tenant = tenantRepository.findBySlug(tenantSlug)
+                .orElseThrow(() -> new RuntimeException("Tenant not found"));
+
+        Document document = new Document();
+        document.setFileName(file.getOriginalFilename());
+        document.setStatus(DocumentStatus.PROCESSING);
+        document.setTenant(tenant);
+        document.setUploadedBy(user);
+        documentRepository.save(document);
 
 
 
@@ -60,24 +72,29 @@ public class DocumentService {
             try (Response response = okHttpClient.newCall(request).execute()) {
                 log.info("Succesfully uploaded the file ✅");
 
+                if(!response.isSuccessful()){
+                    log.info(response.message());
+                    document.setStatus(DocumentStatus.FAILED);
+                    documentRepository.save(document);
+                }
                 String rawJson = response.body().string();
                 JsonNode rootNode = objectMapper.readTree(rawJson);
 
                 int chunk_indexed = rootNode.path("chunk_indexed").asInt(0);
 
-                Document document = new Document();
-                document.setFileName(file.getOriginalFilename());
+
+
                 document.setChunksIndexed(chunk_indexed);
                 document.setStatus(DocumentStatus.INDEXED);
-                document.setTenant(user.getTenant());
-                document.setUploadedBy(user);
                 documentRepository.save(document);
 
-                return "FastAPI Response: " + response.body().string();
+                return "FastAPI Response: " + rawJson;
             }
 
         } catch (Exception e) {
             e.printStackTrace();
+            document.setStatus(DocumentStatus.FAILED);
+            documentRepository.save(document);
             return "Failed: " + e.getMessage();
         }
 

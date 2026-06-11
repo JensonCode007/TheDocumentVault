@@ -26,6 +26,9 @@ public class Document {
     @JoinColumn(name = "tenant_id")
     private Tenant tenant;
 
+    @Column(unique = true)
+    private String fileHash;
+
     @ManyToOne
     @JoinColumn(name = "uploaded_by")
     private User uploadedBy;

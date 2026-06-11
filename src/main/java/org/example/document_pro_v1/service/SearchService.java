@@ -8,15 +8,22 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.example.document_pro_v1.dto.ChatMessage;
 import org.example.document_pro_v1.dto.SearchResponse;
 import org.example.document_pro_v1.entity.QueryLog;
 import org.example.document_pro_v1.entity.Tenant;
 import org.example.document_pro_v1.entity.User;
 import org.example.document_pro_v1.jwtSecurity.JwtTokenProvider;
+import org.example.document_pro_v1.jwtSecurity.UserPrincipal;
 import org.example.document_pro_v1.repository.QueryLogRepository;
 import org.example.document_pro_v1.repository.TenantRepository;
 import org.example.document_pro_v1.repository.UserRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -29,6 +36,7 @@ public class SearchService {
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
     private final AuditLogService auditLogService;
+    private final QueryLogRepository queryLogRepository;
 
     public SearchResponse querySearch(String query, String authHeader) {
         String jwtToken = authHeader;
@@ -87,6 +95,59 @@ public class SearchService {
             e.printStackTrace();
             return null;
         }
+
+
+
+
+    }
+
+    public String ragSearch(UserPrincipal userPrincipal, String query){
+        String tenantSlug = userPrincipal.getTenantSlug();
+        String email =  userPrincipal.getEmail();
+
+        List<QueryLog> ragHistory = queryLogRepository.findRecentChatHistory(
+                tenantSlug, email, PageRequest.of(0,4)
+        );
+
+        Collections.reverse(ragHistory);
+
+        List<ChatMessage> chats = new ArrayList<>();
+        for(QueryLog queryLog : ragHistory){
+            chats.add(new ChatMessage("user", queryLog.getQueryText()));
+            chats.add(new ChatMessage("response", queryLog.getResponseResults()));
+        }
+
+        SearchResponse searchResponse = new SearchResponse(
+            query, tenantSlug, 3, chats
+        );
+
+        try {
+            String json = objectMapper.writeValueAsString(searchResponse);
+            RequestBody requestBody = RequestBody.create(
+                    json,
+                    okhttp3.MediaType.parse("application/json"));
+
+            Request request = new Request.Builder().url("http://localhost:8000/ragSearch")
+                    .post(requestBody)
+                    .build();
+            try (Response response = okHttpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    log.error("FastAPI context query processing failed: {}", response.message());
+                    return "Error: Downstream AI component failed to respond.";
+                }
+
+                String responseBody = response.body().string();
+
+                return responseBody;
+
+            }
+        }
+        catch(Exception e){
+            log.error("Network IO Exception during RAG query extraction", e);
+            return "Failed: Communication error with AI model execution server.";
+        }
+
+
 
 
 

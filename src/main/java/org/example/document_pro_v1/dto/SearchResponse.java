@@ -5,8 +5,9 @@ import java.util.Map;
 
 public record SearchResponse(
         String query,
-        String answer,
-        List<Map<String, Object>> results
+        String tenantSlug,
+        int n_results,
+        List<ChatMessage> messageHistory
 
 ) {
 }

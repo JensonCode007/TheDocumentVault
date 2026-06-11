@@ -29,4 +29,9 @@ public class SearchController {
         return new ResponseEntity<>(searchService.querySearch(query, authHeader), HttpStatus.OK);
 
     }
+
+    @PostMapping("/rag-search")
+    public String ragSearch(@AuthenticationPrincipal UserPrincipal userPrincipal, String query){
+        return searchService.ragSearch(userPrincipal, query);
+    }
 }

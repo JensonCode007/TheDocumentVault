@@ -6,6 +6,7 @@ import org.example.document_pro_v1.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,5 +16,7 @@ public interface QueryLogRepository extends JpaRepository<QueryLog, Long> {
     Page<QueryLog> findByUser(User user,  Pageable pageable);
 
     Page<QueryLog> findByTenant(Tenant tenant, Pageable pageable);
+    @Query("SELECT q FROM QueryLog q WHERE q.tenant.slug = :tenantSlug AND q.user.email = :email ORDER BY q.queriedAt DESC")
+    List<QueryLog> findRecentChatHistory(String tenantSlug, String email, Pageable pageable);
 
 }
